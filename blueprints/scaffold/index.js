@@ -7,6 +7,9 @@ var removeScaffoldRoutes = require('../../lib/utilities/scaffold-routes-generato
 var chalk                = require('chalk');
 var entityAttrs          = require('../../lib/utilities/entity').entityAttrs;
 var sampleDataFromAttrs  = require('../../lib/utilities/entity').sampleDataFromAttrs;
+var lodash               = require('lodash');
+var inflection           = require('inflection');
+var stringUtils          = require('ember-cli-string-utils');
 
 module.exports = {
   anonymousOptions: [
@@ -21,16 +24,25 @@ module.exports = {
   afterInstall: function(options) {
     this._addScaffoldRoutes(options);
 
-    var locals = buildNaming(options.entity.name);
-    var resourcePath = locals.dasherizedModuleNamePlural;
+    var attributeKeyValues = [];
+    for (var name in options.entity.options) {
+      var attrName = stringUtils.camelize(name);
+      attributeKeyValues.push('        ' + attrName + ': ' + 'obj.' + attrName + ',');
+    }
 
-    var mirageConfig = this.insertIntoFile('app/mirage/config.js', [
-      'this.get(\'/' + resourcePath + '\');',
-      'this.get(\'/' + resourcePath + '/:id\');',
-      'this.post(\'/'+ resourcePath + '\');',
-      'this.del(\'/'+ resourcePath + '/:id\');',
-      'this.put(\'/'+ resourcePath + '/:id\');'
-    ].join('\n'), {
+    var locals = buildNaming(options.entity.name);
+    var templateLocals = {
+      resourcePath: inflection.pluralize(stringUtils.dasherize(options.entity.name)),
+      jsonTypeName: inflection.pluralize(stringUtils.camelize(options.entity.name)),
+      collectionName: inflection.pluralize(stringUtils.camelize(options.entity.name)),
+      classifiedResourceName: stringUtils.classify(options.entity.name),
+      attributeKeyValues: attributeKeyValues.join("\n"),
+    };
+
+    var templateStr = fs.readFileSync(__dirname + '/mirage-config.js.tpl', { encoding: 'utf8' });
+    var template = lodash.template(templateStr);
+    var mirageInsert = template(templateLocals);
+    var mirageConfig = this.insertIntoFile('app/mirage/config.js', mirageInsert, {
       after: 'export default function() {\n'
     });
 
