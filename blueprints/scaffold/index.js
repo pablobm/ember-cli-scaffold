@@ -39,15 +39,20 @@ module.exports = {
       attributeKeyValues: attributeKeyValues.join("\n"),
     };
 
+    var mirageConfigImports = this.insertIntoFile('app/mirage/config.js', "import Mirage from 'ember-cli-mirage';\n\n", {
+      before: 'export default',
+    });
+
     var templateStr = fs.readFileSync(__dirname + '/mirage-config.js.tpl', { encoding: 'utf8' });
     var template = lodash.template(templateStr);
-    var mirageInsert = template(templateLocals);
-    var mirageConfig = this.insertIntoFile('app/mirage/config.js', mirageInsert, {
-      after: 'export default function() {\n'
+    var mirageRoutesInsert = template(templateLocals);
+    var mirageConfigRoutes = this.insertIntoFile('app/mirage/config.js', mirageRoutesInsert, {
+      after: 'export default function() {\n',
     });
 
     return RSVP.all([
-      mirageConfig,
+      mirageConfigImports,
+      mirageConfigRoutes,
       this.invoke('model', 'install', options),
       this.invoke('scaffold-template', 'install', options),
       this.invoke('scaffold-route', 'install', options),
