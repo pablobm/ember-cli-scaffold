@@ -10,6 +10,7 @@ var sampleDataFromAttrs  = require('../../lib/utilities/entity').sampleDataFromA
 var lodash               = require('lodash');
 var inflection           = require('inflection');
 var stringUtils          = require('ember-cli-string-utils');
+var os                   = require('os');
 
 module.exports = {
   anonymousOptions: [
@@ -26,22 +27,23 @@ module.exports = {
 
     var attributeKeyValues = [];
     for (var name in options.entity.options) {
-      var attrName = stringUtils.camelize(name);
-      attributeKeyValues.push('        ' + attrName + ': ' + 'obj.' + attrName + ',');
+      var dasherized = stringUtils.dasherize(name);
+      var camelized = stringUtils.camelize(name);
+      attributeKeyValues.push("        '" + dasherized + "': " + 'obj.' + camelized + ',');
     }
 
     var locals = buildNaming(options.entity.name);
+    var isMultiword = locals.underscoredModuleName.indexOf('_') !== -1;
     var templateLocals = {
       resourcePath: inflection.pluralize(stringUtils.dasherize(options.entity.name)),
       jsonTypeName: inflection.pluralize(stringUtils.camelize(options.entity.name)),
-      collectionName: inflection.pluralize(stringUtils.camelize(options.entity.name)),
+      collectionNavigator: isMultiword ? "['" + inflection.pluralize(stringUtils.dasherize(options.entity.name)) + "']" : '.' + inflection.pluralize(options.entity.name),
       classifiedResourceName: stringUtils.classify(options.entity.name),
+      routeParamResourceName: stringUtils.underscore(options.entity.name),
       attributeKeyValues: attributeKeyValues.join("\n"),
     };
 
-    var mirageConfigImports = this.insertIntoFile('app/mirage/config.js', "import Mirage from 'ember-cli-mirage';\n\n", {
-      before: 'export default',
-    });
+    var mirageConfigImports = this._prependToFile('app/mirage/config.js', "import Mirage from 'ember-cli-mirage';");
 
     var templateStr = fs.readFileSync(__dirname + '/mirage-config.js.tpl', { encoding: 'utf8' });
     var template = lodash.template(templateStr);
@@ -77,6 +79,15 @@ module.exports = {
       var status = addScaffoldRoutes(routerFile, locals);
       this._writeRouterStatus(status, 'green');
     }
+  },
+  _prependToFile: function(path, line) {
+    return new Promise(resolve => {
+      var fullPath = this.project.root + '/' + path;
+      var content = fs.readFileSync(fullPath, 'utf8');
+      content = line + os.EOL + content;
+      fs.writeFileSync(fullPath, content);
+      resolve();
+    });
   },
   _removeScaffoldRoutes: function(options) {
     var routerFile = path.join(options.target, 'app', 'router.js');

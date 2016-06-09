@@ -60,6 +60,28 @@ test('create a new <%= dasherizedModuleName %>', function(assert) {
   });
 });
 
+test('show an existing <%= dasherizedModuleName %> from index', function(assert) {
+  server.create('<%= dasherizedModuleName %>');
+  visit('/<%= dasherizedModuleNamePlural %>');
+  click('a:contains(Show)');
+
+  andThen(function() {
+    assert.equal(currentPath(), '<%= dasherizedModuleNamePlural %>.show');
+<% attrs.forEach(function(attr) { %>
+    assert.equal(find('p strong:contains(<%= attr.label %>:)').next().text(), <%= attr.sampleValue %>);<% }); %>
+  });
+});
+
+test('show an existing <%= dasherizedModuleName %> on landing', function(assert) {
+  const item = server.create('<%= dasherizedModuleName %>');
+  visit('/<%= dasherizedModuleNamePlural %>/' + item.id);
+
+  andThen(function() {
+<% attrs.forEach(function(attr) { %>
+    assert.equal(find('p strong:contains(<%= attr.label %>:)').next().text(), <%= attr.sampleValue %>);<% }); %>
+  });
+});
+
 test('update an existing <%= dasherizedModuleName %>', function(assert) {
   server.create('<%= dasherizedModuleName %>');
   visit('/<%= dasherizedModuleNamePlural %>');
@@ -76,18 +98,6 @@ test('update an existing <%= dasherizedModuleName %>', function(assert) {
   andThen(function() {
     assert.equal(find('#blankslate').length, 0);
     assert.equal(find('table tbody tr').length, 1);
-  });
-});
-
-test('show an existing <%= dasherizedModuleName %>', function(assert) {
-  server.create('<%= dasherizedModuleName %>');
-  visit('/<%= dasherizedModuleNamePlural %>');
-  click('a:contains(Show)');
-
-  andThen(function() {
-    assert.equal(currentPath(), '<%= dasherizedModuleNamePlural %>.show');
-<% attrs.forEach(function(attr) { %>
-    assert.equal(find('p strong:contains(<%= attr.label %>:)').next().text(), <%= attr.sampleValue %>);<% }); %>
   });
 });
 

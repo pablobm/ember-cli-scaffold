@@ -11,26 +11,33 @@
 
   this.get('/<%= resourcePath %>', function(db) {
     return {
-      data: db.<%= collectionName %>.map(build<%= classifiedResourceName %>Data),
+      data: db<%= collectionNavigator %>.map(build<%= classifiedResourceName %>Data),
     };
   });
 
-  this.post('/<%= resourcePath %>', function(db, request) {
-    const attrs = JSON.parse(request.requestBody).data.attributes;
-    const item = db.<%= collectionName %>.insert(attrs);
+  this.get('/<%= resourcePath %>/:<%= routeParamResourceName %>_id', function(db, request) {
+    const item = db<%= collectionNavigator %>.find(request.params.<%= routeParamResourceName %>_id);
     return {
       data: build<%= classifiedResourceName %>Data(item),
     };
   });
 
-  this.del('/<%= resourcePath %>/:id', function(db, request) {
-    db.<%= collectionName %>.remove(request.params.id);
+  this.post('/<%= resourcePath %>', function(db, request) {
+    const attrs = JSON.parse(request.requestBody).data.attributes_id;
+    const item = db<%= collectionNavigator %>.insert(attrs);
+    return {
+      data: build<%= classifiedResourceName %>Data(item),
+    };
+  });
+
+  this.del('/<%= resourcePath %>/:<%= routeParamResourceName %>_id', function(db, request) {
+    db<%= collectionNavigator %>.remove(request.params.<%= routeParamResourceName %>_id);
     return new Mirage.Response(204, {}, null);
   });
 
-  this.patch('/<%= resourcePath %>/:id', function(db, request) {
+  this.patch('/<%= resourcePath %>/:<%= routeParamResourceName %>_id', function(db, request) {
     const attrs = JSON.parse(request.requestBody).data.attributes;
-    const item = db.<%= collectionName %>.update(request.params.id, attrs);
+    const item = db<%= collectionNavigator %>.update(request.params.<%= routeParamResourceName %>_id, attrs);
     return {
       data: build<%= classifiedResourceName %>Data(item),
     };

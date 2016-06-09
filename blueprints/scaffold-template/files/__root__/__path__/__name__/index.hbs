@@ -20,7 +20,7 @@
       {{#each model as |<%= camelizedModuleName %>|}}
         <tr><% attrs.forEach(function(attr) { %>
           <td>
-            {{<%= camelizedModuleName %>.<%= attr.name %>}}
+            {{<%= camelizedModuleName %>.<%= attr.camelizedName %>}}
           </td><% }); %>
           <td>
             {{link-to "Edit" "<%= dasherizedModuleNamePlural %>.edit" <%= camelizedModuleName %>}}
