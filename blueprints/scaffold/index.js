@@ -17,6 +17,9 @@ module.exports = {
   ],
   description: 'Scaffolds an entire resource',
   invoke: function(name, operation, options) {
+    if (this._mirageVersionIsOld(options)) {
+      throw new Error("ember-cli-scaffold is compatible only with Mirage v0.2.x");
+    }
     var blueprint = this.lookupBlueprint(name);
     return blueprint[operation](options);
   },
@@ -32,7 +35,7 @@ module.exports = {
       this.invoke('scaffold-route', 'install', options),
       this.invoke('scaffold-mixin', 'install', options),
       this.invoke('scaffold-acceptance-test', 'install', options),
-      this._invokeMirageGenerators(options),
+      this.invoke('mirage-model', 'install', options),
       this._addMirageEndpoints(locals, options)
     ]);
   },
@@ -47,45 +50,6 @@ module.exports = {
     ]);
   },
   _addMirageEndpoints: function(locals, options) {
-    if (this._mirageVersionIsOld(options)) {
-      this._addMirage01Endpoints(locals, options);
-    }
-    else {
-      this._addMirage02Endpoints(locals, options);
-    }
-  },
-  _addMirage01Endpoints: function(locals, options) {
-    var mirageConfigPath = '/app/mirage/config.js';
-    fs.ensureFileSync(options.target + mirageConfigPath);
-    var addImports = this._prependToFile(options.target + '/' + mirageConfigPath, "import Mirage from 'ember-cli-mirage';");
-
-    var attributeKeyValues = [];
-    for (name in options.entity.options) {
-      attributeKeyValues.push(
-        '        ' + name + ': ' + 'obj.' + name
-      );
-    }
-
-    var templateLocals = {
-      resourcePath: locals.moduleNamePlural,
-      jsonTypeName: locals.moduleNamePlural,
-      collectionName: locals.moduleNamePlural,
-      dataBuilderFunctionName: 'build' + locals.classifiedModuleName + 'Data',
-      idParamName: locals.moduleName + '_id',
-      attributeKeyValues: attributeKeyValues.join(",\n"),
-    };
-
-    var templateStr = fs.readFileSync(__dirname + '/mirage-config-old.js.tpl', { encoding: 'utf8' });
-    var template = lodash.template(templateStr);
-    var mirageEndpointsInsert = template(templateLocals);
-
-    var addEndpoints = this.insertIntoFile(mirageConfigPath, mirageEndpointsInsert, {
-      after: 'export default function() {'
-    });
-
-    return RSVP.all([addImports, addEndpoints]);
-  },
-  _addMirage02Endpoints: function(locals, options) {
     var mirageConfigPath = '/mirage/config.js';
     fs.ensureFileSync(options.target + mirageConfigPath);
 
@@ -110,12 +74,6 @@ module.exports = {
       var status = addScaffoldRoutes(routerFile, locals);
       this._writeRouterStatus(status, 'green');
     }
-  },
-  _invokeMirageGenerators: function(options) {
-    if (this._mirageVersionIsOld(options)) {
-      return;
-    }
-    return this.invoke('mirage-model', 'install', options);
   },
   _prependToFile: function(path, line) {
     return new RSVP.Promise(function(resolve) {
