@@ -27,12 +27,13 @@ module.exports = {
     var resourcePath = locals.dasherizedModuleNamePlural;
 
     return RSVP.all([
-      this._addMirageEndpoints(locals, options),
       this.invoke('model', 'install', options),
       this.invoke('scaffold-template', 'install', options),
       this.invoke('scaffold-route', 'install', options),
       this.invoke('scaffold-mixin', 'install', options),
-      this.invoke('scaffold-acceptance-test', 'install', options)
+      this.invoke('scaffold-acceptance-test', 'install', options),
+      this._invokeMirageGenerators(options),
+      this._addMirageEndpoints(locals, options)
     ]);
   },
   afterUninstall: function(options) {
@@ -46,7 +47,17 @@ module.exports = {
     ]);
   },
   _addMirageEndpoints: function(locals, options) {
-    var addImports = this._prependToFile('app/mirage/config.js', "import Mirage from 'ember-cli-mirage';");
+    if (this._mirageVersionIsOld(options)) {
+      this._addMirage01Endpoints(locals, options);
+    }
+    else {
+      this._addMirage02Endpoints(locals, options);
+    }
+  },
+  _addMirage01Endpoints: function(locals, options) {
+    var mirageConfigPath = '/app/mirage/config.js';
+    fs.ensureFileSync(options.target + mirageConfigPath);
+    var addImports = this._prependToFile(options.target + '/' + mirageConfigPath, "import Mirage from 'ember-cli-mirage';");
 
     var attributeKeyValues = [];
     for (name in options.entity.options) {
@@ -64,15 +75,33 @@ module.exports = {
       attributeKeyValues: attributeKeyValues.join(",\n"),
     };
 
-    var templateStr = fs.readFileSync(__dirname + '/mirage-config.js.tpl', { encoding: 'utf8' });
+    var templateStr = fs.readFileSync(__dirname + '/mirage-config-old.js.tpl', { encoding: 'utf8' });
     var template = lodash.template(templateStr);
     var mirageEndpointsInsert = template(templateLocals);
 
-    var addEndpoints = this.insertIntoFile('app/mirage/config.js', mirageEndpointsInsert, {
-      after: 'export default function() {\n',
+    var addEndpoints = this.insertIntoFile(mirageConfigPath, mirageEndpointsInsert, {
+      after: 'export default function() {'
     });
 
     return RSVP.all([addImports, addEndpoints]);
+  },
+  _addMirage02Endpoints: function(locals, options) {
+    var mirageConfigPath = '/mirage/config.js';
+    fs.ensureFileSync(options.target + mirageConfigPath);
+
+    var templateLocals = {
+      resourcePath: locals.moduleNamePlural,
+    };
+
+    var templateStr = fs.readFileSync(__dirname + '/mirage-config-new.js.tpl', { encoding: 'utf8' });
+    var template = lodash.template(templateStr);
+    var mirageEndpointsInsert = template(templateLocals);
+
+    var addEndpoints = this.insertIntoFile(mirageConfigPath, mirageEndpointsInsert, {
+      after: "export default function() {\n"
+    });
+
+    return addEndpoints;
   },
   _addScaffoldRoutes: function(options) {
     var routerFile = path.join(options.target, 'app', 'router.js');
@@ -82,12 +111,17 @@ module.exports = {
       this._writeRouterStatus(status, 'green');
     }
   },
+  _invokeMirageGenerators: function(options) {
+    if (this._mirageVersionIsOld(options)) {
+      return;
+    }
+    return this.invoke('mirage-model', 'install', options);
+  },
   _prependToFile: function(path, line) {
-    return new Promise(resolve => {
-      var fullPath = this.project.root + '/' + path;
-      var content = fs.readFileSync(fullPath, 'utf8');
+    return new RSVP.Promise(function(resolve) {
+      var content = fs.readFileSync(path, 'utf8');
       content = line + os.EOL + content;
-      fs.writeFileSync(fullPath, content);
+      fs.writeFileSync(path, content);
       resolve();
     });
   },
@@ -97,6 +131,24 @@ module.exports = {
       var locals = buildNaming(options.entity.name);
       var status = removeScaffoldRoutes(routerFile, locals);
       this._writeRouterStatus(status, 'red');
+    }
+  },
+  _mirageVersionIsOld: function(options) {
+    var basePath = options.target;
+    var oldPath = '/app/mirage/config.js';
+    var newPath = '/mirage/config.js';
+    try {
+      fs.statSync(basePath + newPath);
+      return false;
+    }
+    catch(_) {
+    }
+    try {
+      fs.statSync(basePath + oldPath);
+      return true;
+    }
+    catch(e) {
+      throw new Error("Can't tell what version of Mirage this is: can't find config file. Tried " + newPath + " and " + oldPath + ". Got " + e);
     }
   },
   _writeRouterStatus: function(status, operationColor) {
