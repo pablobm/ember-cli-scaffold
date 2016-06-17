@@ -75,14 +75,6 @@ module.exports = {
       this._writeRouterStatus(status, 'green');
     }
   },
-  _prependToFile: function(path, line) {
-    return new RSVP.Promise(function(resolve) {
-      var content = fs.readFileSync(path, 'utf8');
-      content = line + os.EOL + content;
-      fs.writeFileSync(path, content);
-      resolve();
-    });
-  },
   _removeScaffoldRoutes: function(options) {
     var routerFile = path.join(options.target, 'app', 'router.js');
     if (fs.existsSync(routerFile)) {
