@@ -57,7 +57,7 @@ module.exports = {
       resourcePath: locals.moduleNamePlural,
     };
 
-    var templateStr = fs.readFileSync(__dirname + '/mirage-config-new.js.tpl', { encoding: 'utf8' });
+    var templateStr = fs.readFileSync(__dirname + '/mirage-config.js.tpl', { encoding: 'utf8' });
     var template = lodash.template(templateStr);
     var mirageEndpointsInsert = template(templateLocals);
 
