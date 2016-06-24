@@ -8,6 +8,13 @@ var chalk                = require('chalk');
 var entityAttrs          = require('../../lib/utilities/entity').entityAttrs;
 var sampleDataFromAttrs  = require('../../lib/utilities/entity').sampleDataFromAttrs;
 
+function validMirageIsInstalled(options) {
+  var pjs = require(options.target + '/package.json') || {};
+  var deps = pjs.devDependencies || [];
+  var version = deps['ember-cli-mirage'] || '';
+  return version.search(/0\.2\..$/) !== -1;
+}
+
 module.exports = {
   anonymousOptions: [
     'name',
@@ -15,6 +22,9 @@ module.exports = {
   ],
   description: 'Scaffolds an entire resource',
   invoke: function(name, operation, options) {
+    if (!validMirageIsInstalled(options)) {
+      throw new Error("ember-cli-scaffold requires ember-cli-mirage 0.2");
+    }
     var blueprint = this.lookupBlueprint(name);
     return blueprint[operation](options);
   },
