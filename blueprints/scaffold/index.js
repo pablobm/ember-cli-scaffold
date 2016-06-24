@@ -51,7 +51,8 @@ module.exports = {
       this.invoke('scaffold-template', 'install', options),
       this.invoke('scaffold-route', 'install', options),
       this.invoke('scaffold-mixin', 'install', options),
-      this.invoke('scaffold-acceptance-test', 'install', options)
+      this.invoke('scaffold-acceptance-test', 'install', options),
+      this.invoke('mirage-model', 'install', options)
     ]);
   },
   afterUninstall: function(options) {
@@ -61,7 +62,8 @@ module.exports = {
       this.invoke('scaffold-template', 'uninstall', options),
       this.invoke('scaffold-route', 'uninstall', options),
       this.invoke('scaffold-mixin', 'uninstall', options),
-      this.invoke('scaffold-acceptance-test', 'uninstall', options)
+      this.invoke('scaffold-acceptance-test', 'uninstall', options),
+      this.invoke('mirage-model', 'uninstall', options)
     ]);
   },
   _addScaffoldRoutes: function(options) {
