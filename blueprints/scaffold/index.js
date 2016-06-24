@@ -35,7 +35,6 @@ module.exports = {
     var resourcePath = locals.dasherizedModuleNamePlural;
 
     var mirageConfig = this.insertIntoFile('mirage/config.js', [
-      'this.namespace = \'api\';',
       'this.get(\'/' + resourcePath + '\');',
       'this.get(\'/' + resourcePath + '/:id\');',
       'this.post(\'/'+ resourcePath + '\');',
