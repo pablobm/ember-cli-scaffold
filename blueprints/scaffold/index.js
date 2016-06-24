@@ -21,10 +21,12 @@ module.exports = {
     'attr:type'
   ],
   description: 'Scaffolds an entire resource',
-  invoke: function(name, operation, options) {
-    if (!validMirageIsInstalled(options)) {
+  beforeInstall: function(options) {
+    if (!options.taskOptions.skipMirageCheck && !validMirageIsInstalled(options)) {
       throw new Error("ember-cli-scaffold requires ember-cli-mirage 0.2");
     }
+  },
+  invoke: function(name, operation, options) {
     var blueprint = this.lookupBlueprint(name);
     return blueprint[operation](options);
   },
@@ -33,6 +35,7 @@ module.exports = {
 
     var locals = buildNaming(options.entity.name);
     var resourcePath = locals.dasherizedModuleNamePlural;
+    var skipMirageModel = options.taskOptions.skipMirageModel;
 
     var mirageConfig = this.insertIntoFile('mirage/config.js', [
       'this.get(\'/' + resourcePath + '\');',
@@ -44,26 +47,39 @@ module.exports = {
       after: 'export default function() {\n'
     });
 
-    return RSVP.all([
+    var tasks = [
       mirageConfig,
       this.invoke('model', 'install', options),
       this.invoke('scaffold-template', 'install', options),
       this.invoke('scaffold-route', 'install', options),
       this.invoke('scaffold-mixin', 'install', options),
       this.invoke('scaffold-acceptance-test', 'install', options),
-      this.invoke('mirage-model', 'install', options)
-    ]);
+    ];
+    if (!skipMirageModel) {
+      tasks.push(
+        this.invoke('mirage-model', 'install', options)
+      );
+    }
+
+    return RSVP.all(tasks);
   },
   afterUninstall: function(options) {
     this._removeScaffoldRoutes(options);
-    return RSVP.all([
+    var skipMirageModel = options.taskOptions.skipMirageModel;
+    var tasks = [
       this.invoke('model', 'uninstall', options),
       this.invoke('scaffold-template', 'uninstall', options),
       this.invoke('scaffold-route', 'uninstall', options),
       this.invoke('scaffold-mixin', 'uninstall', options),
       this.invoke('scaffold-acceptance-test', 'uninstall', options),
-      this.invoke('mirage-model', 'uninstall', options)
-    ]);
+    ];
+    if (!skipMirageModel) {
+      tasks.push(
+        this.invoke('mirage-model', 'uninstall', options)
+      )
+    }
+
+    return RSVP.all(tasks);
   },
   _addScaffoldRoutes: function(options) {
     var routerFile = path.join(options.target, 'app', 'router.js');
