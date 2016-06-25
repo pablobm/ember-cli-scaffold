@@ -45,7 +45,7 @@ describe('scaffold blueprint', function() {
       inRepoAddon: null,
       taskOptions: {
         skipMirageCheck: true,
-        skipMirageModel: true
+        skipModel: true
       }
     };
     blueprint = Blueprint.lookup('scaffold', options);
