@@ -40,7 +40,7 @@ module.exports = {
       this.invoke('scaffold-template', 'install', options),
       this.invoke('scaffold-route', 'install', options),
       this.invoke('scaffold-mixin', 'install', options),
-      this.invoke('scaffold-acceptance-test', 'install', options),
+      this.invoke('scaffold-acceptance-test', 'install', options)
     ];
     if (!skipModel) {
       tasks.push(
@@ -58,7 +58,7 @@ module.exports = {
       this.invoke('scaffold-template', 'uninstall', options),
       this.invoke('scaffold-route', 'uninstall', options),
       this.invoke('scaffold-mixin', 'uninstall', options),
-      this.invoke('scaffold-acceptance-test', 'uninstall', options),
+      this.invoke('scaffold-acceptance-test', 'uninstall', options)
     ];
     if (!skipModel) {
       tasks.push(
